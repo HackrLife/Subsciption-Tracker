@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorful Subscription Tracker</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .subscriptions {
+            margin-top: 30px;
+        }
+        .category {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .category h2 {
+            margin-top: 0;
+            color: #fff;
+        }
+        .subscription-item {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .subscription-item button {
+            padding: 5px 10px;
+            margin-left: 5px;
+            width: auto;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        .edit-btn {
+            background-color: #f39c12;
+        }
+        .edit-btn:hover {
+            background-color: #d35400;
+        }
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Colorful Subscription Tracker</h1>
+        <div class="input-group">
+            <label for="name">Subscription Name:</label>
+            <input type="text" id="name" required>
+        </div>
+        <div class="input-group">
+            <label for="amount">Amount ($):</label>
+            <input type="number" id="amount" step="0.01" required>
+        </div>
+        <div class="input-group">
+            <label for="category">Category:</label>
+            <select id="category" required>
+                <option value="hobbies">Hobbies</option>
+                <option value="leisure">Leisure</option>
+                <option value="sports">Sports</option>
+                <option value="household">Household</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="productivity">Productivity</option>
+            </select>
+        </div>
+        <button onclick="addSubscription()">Add Subscription</button>
+        <div id="subscriptions" class="subscriptions"></div>
+        <div id="total" class="total"></div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Subscription</h2>
+            <div class="input-group">
+                <label for="editName">Subscription Name:</label>
+                <input type="text" id="editName" required>
+            </div>
+            <div class="input-group">
+                <label for="editAmount">Amount ($):</label>
+                <input type="number" id="editAmount" step="0.01" required>
+            </div>
+            <div class="input-group">
+                <label for="editCategory">Category:</label>
+                <select id="editCategory" required>
+                    <option value="hobbies">Hobbies</option>
+                    <option value="leisure">Leisure</option>
+                    <option value="sports">Sports</option>
+                    <option value="household">Household</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="productivity">Productivity</option>
+                </select>
+            </div>
+            <button onclick="saveEdit()">Save Changes</button>
+        </div>
+    </div>
+
+    <script>
+        let subscriptions = {};
+        const categories = {
+            hobbies: { color: '#3498db', name: 'Hobbies' },
+            leisure: { color: '#e74c3c', name: 'Leisure' },
+            sports: { color: '#2ecc71', name: 'Sports' },
+            household: { color: '#f39c12', name: 'Household' },
+            entertainment: { color: '#9b59b6', name: 'Entertainment' },
+            productivity: { color: '#1abc9c', name: 'Productivity' }
+        };
+
+        let editingSubscription = null;
+
+        function addSubscription() {
+            const name = document.getElementById('name').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = document.getElementById('category').value;
+
+            if (name && amount && category) {
+                if (!subscriptions[category]) {
+                    subscriptions[category] = [];
+                }
+                subscriptions[category].push({ name, amount });
+                updateSubscriptions();
+                clearInputs();
+            } else {
+                alert('Please fill in all fields');
+            }
+        }
+
+        function updateSubscriptions() {
+            const subscriptionsDiv = document.getElementById('subscriptions');
+            subscriptionsDiv.innerHTML = '';
+            let total = 0;
+
+            for (const category in subscriptions) {
+                if (subscriptions[category].length > 0) {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'category';
+                    categoryDiv.style.backgroundColor = categories[category].color;
+
+                    categoryDiv.innerHTML = `<h2>${categories[category].name}</h2>`;
+
+                    subscriptions[category].forEach((sub, index) => {
+                        const subDiv = document.createElement('div');
+                        subDiv.className = 'subscription-item';
+                        subDiv.innerHTML = `
+                            <span>${sub.name} - $${sub.amount.toFixed(2)}</span>
+                            <div>
+                                <button class="edit-btn" onclick="editSubscription('${category}', ${index})">Edit</button>
+                                <button class="delete-btn" onclick="deleteSubscription('${category}', ${index})">Delete</button>
+                            </div>
+                        `;
+                        categoryDiv.appendChild(subDiv);
+                        total += sub.amount;
+                    });
+
+                    subscriptionsDiv.appendChild(categoryDiv);
+                }
+            }
+
+            document.getElementById('total').textContent = `Total: $${total.toFixed(2)}`;
+        }
+
+        function deleteSubscription(category, index) {
+            subscriptions[category].splice(index, 1);
+            updateSubscriptions();
+        }
+
+        function editSubscription(category, index) {
+            editingSubscription = { category, index };
+            const sub = subscriptions[category][index];
+            document.getElementById('editName').value = sub.name;
+            document.getElementById('editAmount').value = sub.amount;
+            document.getElementById('editCategory').value = category;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function saveEdit() {
+            const newName = document.getElementById('editName').value;
+            const newAmount = parseFloat(document.getElementById('editAmount').value);
+            const newCategory = document.getElementById('editCategory').value;
+
+            if (newName && newAmount && newCategory) {
+                const { category: oldCategory, index } = editingSubscription;
+                const updatedSub = { name: newName, amount: newAmount };
+
+                if (oldCategory === newCategory) {
+                    subscriptions[oldCategory][index] = updatedSub;
+                } else {
+                    subscriptions[oldCategory].splice(index, 1);
+                    if (!subscriptions[newCategory]) {
+                        subscriptions[newCategory] = [];
+                    }
+                    subscriptions[newCategory].push(updatedSub);
+                }
+
+                updateSubscriptions();
+                closeModal();
+            } else {
+                alert('Please fill in all fields');
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById('name').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('category').selectedIndex = 0;
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingSubscription = null;
+        }
+
+        // Close modal when clicking on <span> (x)
+        document.getElementsByClassName('close')[0].onclick = closeModal;
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('editModal')) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
